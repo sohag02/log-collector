@@ -1,14 +1,17 @@
-// server.ts
 import express from "express";
 import Docker from "dockerode";
 import cors from "cors";
 import { Readable } from "stream";
+import logger from "./logger";
 
 const app = express();
 const PORT = process.env.PORT || 8000;
 
+
 // Enable CORS so the Vercel dashboard can access this API
 app.use(cors());
+
+app.use(logger);
 
 const docker = new Docker({ socketPath: "/var/run/docker.sock" });
 
@@ -33,7 +36,7 @@ app.get("/logs", async (req, res) => {
   try {
     // Use an environment variable or hardcode your container ID/name.
     const containerId =
-      process.env.EXPRESS_CONTAINER_ID || "your-express-container-id";
+      process.env.EXPRESS_CONTAINER_ID || "encore_app";
     const container = docker.getContainer(containerId);
 
     // Options: adjust as necessary (e.g., tail 100 lines, include timestamps, etc.)
@@ -43,6 +46,8 @@ app.get("/logs", async (req, res) => {
       timestamps: true,
       tail: 100, // get the last 100 lines
     });
+
+    console.log(logStream);
 
     const logsString = await streamToString(logStream as unknown as Readable);
     const logs = logsString.split("\n").filter(Boolean);
